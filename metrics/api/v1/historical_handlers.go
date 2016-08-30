@@ -694,6 +694,10 @@ func (a *HistoricalApi) processAggregationRequest(key core.HistoricalKey, reques
 	response.WriteEntity(converted)
 }
 
+func (a *HistoricalApi) podContainersList(request *restful.Request, response *restful.Response) {
+
+}
+
 // getBucketSize parses the bucket size specifier into a
 func getBucketSize(request *restful.Request) (time.Duration, error) {
 	rawSize := request.QueryParameter("bucket")

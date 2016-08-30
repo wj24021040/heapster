@@ -68,6 +68,7 @@ type clusterMetricsFetcher interface {
 	freeContainerMetrics(request *restful.Request, response *restful.Response)
 
 	podListMetrics(request *restful.Request, response *restful.Response)
+	podContainersList(request *restful.Request, response *restful.Response)
 
 	isRunningInKubernetes() bool
 }
@@ -172,6 +173,13 @@ func addClusterMetricsRoutes(a clusterMetricsFetcher, ws *restful.WebService) {
 			Param(ws.QueryParameter("end", "End time for requested metric").DataType("string")).
 			Param(ws.QueryParameter("labels", "A comma-separated list of key:values pairs to use to search for a labeled metric").DataType("string")).
 			Writes(types.MetricResult{}))
+
+		ws.Route(ws.GET("/namespaces/{namespace-name}/pods/{pod-name}/containers/").
+			To(metrics.InstrumentRouteFunc("PodContainerList", a.podContainersList)).
+			Doc("Get a list of contianers from the given pod that have some metrics").
+			Operation("podContainersList").
+			Param(ws.PathParameter("namespace-name", "The name of the namespace to lookup").DataType("string")).
+			Param(ws.PathParameter("pod-name", "The name of the pod to lookup").DataType("string")))
 
 		// The /namespaces/{namespace-name}/pods/{pod-name}/containers/metrics/{container-name}/metrics endpoint
 		// returns a list of all available metrics for a Pod Container entity.
@@ -321,6 +329,10 @@ func (a *Api) namespacePodList(request *restful.Request, response *restful.Respo
 
 func (a *Api) nodeSystemContainerList(request *restful.Request, response *restful.Response) {
 	response.WriteEntity(a.metricSink.GetSystemContainersFromNode(request.PathParameter("node-name")))
+}
+
+func (a *Api) podContainersList(request *restful.Request, response *restful.Response) {
+	response.WriteEntity(a.metricSink.GetContainersForPodFromNamespace(request.PathParameter("namespace-name"), request.PathParameter("pod-name")))
 }
 
 func (a *Api) allKeys(request *restful.Request, response *restful.Response) {
